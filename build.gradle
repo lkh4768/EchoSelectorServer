@@ -1,0 +1,19 @@
+group 'xyz.sw-warehouse.xyz'
+version '1.0'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'org.apache.commons', name: 'commons-configuration2', version: 'latest.release'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: 'latest.release'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: 'latest.release'
+    compile group: 'commons-beanutils', name: 'commons-beanutils', version: 'latest.release'
+
+    testCompile group: 'junit', name: 'junit', version: 'latest.release'
+}
