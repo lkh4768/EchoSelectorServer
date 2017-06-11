@@ -15,6 +15,7 @@ public class Util {
     @NotNull
     public static String bufferByteToString(ByteBuffer buf, int n) {
         byte[] bytes = buf.array();
-        return new String(bytes, 0, n, StandardCharsets.UTF_8);
+        String str = new String(bytes, 0, n, StandardCharsets.UTF_8);
+        return str;
     }
 }

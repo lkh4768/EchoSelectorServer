@@ -25,6 +25,7 @@ public class Session {
             this.port = addr.getPort();
             socketChannel.configureBlocking(false);
         } catch (IOException e) {
+            server.closeSession(this);
             logger.error("Session Constructor Error(" + e.getMessage() + ")");
         }
     }
@@ -46,6 +47,7 @@ public class Session {
 
         } catch (IOException e) {
             logger.error("Session(" + host + ":" + port + ") Read Error(" + e.getMessage() + ")");
+            server.closeSession(this);
             return nread;
         }
 

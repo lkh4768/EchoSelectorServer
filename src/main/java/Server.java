@@ -52,7 +52,7 @@ public class Server {
 
                         ByteBuffer buf = ByteBuffer.allocate(1024);
                         int length = session.read(buf);
-                        if(length== 0)
+                        if (length == 0)
                             continue;
 
                         session.write(buf, length);
@@ -106,8 +106,7 @@ public class Server {
         logger.info("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + "), Stop");
     }
 
-    public void closeSession(Session session)
-    {
+    public void closeSession(Session session) {
         sessions.remove(session);
         session.close();
     }
