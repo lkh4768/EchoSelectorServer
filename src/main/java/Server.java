@@ -4,10 +4,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -17,6 +14,7 @@ import java.util.Set;
  */
 public class Server {
     private static final Logger logger = LogManager.getLogger(Server.class);
+    private static final int FAILED_COUNT_LIMIT = 3;
 
     private ServerSocketChannel serverSocketChannel = null;
     private InetSocketAddress addr = null;
@@ -34,39 +32,76 @@ public class Server {
         serverSocketChannel.configureBlocking(false);
     }
 
-    public void run() {
+    public boolean run() {
         try {
             serverSocketChannel.bind(addr);
-            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            while (true) {
-                int readyChannels = selector.select();
-                if (readyChannels == 0) continue;
-                Set<SelectionKey> selectionKeys = selector.selectedKeys();
-                Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
-                while (keyIterator.hasNext()) {
-                    SelectionKey key = keyIterator.next();
-                    if (key.isAcceptable()) {
-                        accept();
-                    } else if (key.isReadable()) {
-                        Session session = (Session) key.attachment();
-
-                        ByteBuffer buf = ByteBuffer.allocate(1024);
-                        int length = session.read(buf);
-                        if (length == 0)
-                            continue;
-
-                        session.write(buf, length);
-                    } else {
-                        logger.warn("Invalid Selectkey(" + key.readyOps() + ")");
-                    }
-
-                    keyIterator.remove();
-                }
-            }
         } catch (IOException e) {
-            logger.error(e.getMessage());
-            stop();
+            logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ")(" +
+                    serverSocketChannel.socket().hashCode() + "), Bind Error(" + e.getMessage() + ")");
+            return false;
         }
+
+        try {
+            serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+        } catch (ClosedChannelException e) {
+            logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ")(" +
+                    serverSocketChannel.socket().hashCode() + "), Register Error(" + e.getMessage() + ")");
+            return false;
+        }
+
+        int failedCnt = 0;
+        while (true) {
+            if (failedCnt == 3) {
+                logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ")(" +
+                        serverSocketChannel.socket().hashCode() + "), run failed count exceed limit(" +
+                        FAILED_COUNT_LIMIT + ")");
+                break;
+            }
+
+            int readyChannels = 0;
+            try {
+                readyChannels = selector.select();
+            } catch (IOException e) {
+                logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ")(" +
+                        serverSocketChannel.socket().hashCode() + "), Selector select Error(" + e.getMessage() + ")");
+                try {
+                    Thread.sleep(1000000 * 10);
+                } catch (InterruptedException e1) {
+                    logger.error(
+                            "Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ")(" +
+                                    serverSocketChannel.socket().hashCode() + "), Selector select Error(" +
+                                    e.getMessage() + ")");
+                }
+                failedCnt++;
+            }
+            failedCnt = 0;
+
+            if (readyChannels == 0) continue;
+            Set<SelectionKey> selectionKeys = selector.selectedKeys();
+            Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
+            while (keyIterator.hasNext()) {
+                SelectionKey key = keyIterator.next();
+                if (key.isAcceptable()) {
+                    accept();
+                } else if (key.isReadable()) {
+                    Session session = (Session) key.attachment();
+
+                    ByteBuffer buf = ByteBuffer.allocate(1024);
+                    int length = session.read(buf);
+                    if (length == 0)
+                        continue;
+
+                    session.write(buf, length);
+                } else {
+                    logger.warn("Invalid Selectkey(" + key.readyOps() + ")");
+                }
+
+                keyIterator.remove();
+            }
+        }
+
+        stop();
+        return false;
     }
 
     private void accept() {
@@ -84,14 +119,17 @@ public class Server {
 
     private void stop() {
         for (Session session : sessions) {
-            closeSession(session);
+            session.close();
         }
+
+        sessions.clear();
 
         if (serverSocketChannel != null && serverSocketChannel.isOpen()) {
             try {
                 serverSocketChannel.close();
             } catch (IOException e) {
-                logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + "), Channel Close Error(" + e.getMessage() + ")");
+                logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() +
+                        "), Channel Close Error(" + e.getMessage() + ")");
             }
         }
 
@@ -99,11 +137,12 @@ public class Server {
             try {
                 selector.close();
             } catch (IOException e) {
-                logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + "), Selector Close Error(" + e.getMessage() + ")");
+                logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() +
+                        "), Selector Close Error(" + e.getMessage() + ")");
             }
         }
 
-        logger.info("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + "), Stop");
+        logger.info("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + "), Closed");
     }
 
     public void closeSession(Session session) {

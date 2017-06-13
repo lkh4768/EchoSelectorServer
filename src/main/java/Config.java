@@ -15,7 +15,7 @@ public enum Config {
     private int timeout;
     private static final Logger logger = LogManager.getLogger(Config.class);
 
-    public void getConfig() {
+    public boolean getConfig() {
         Parameters params = new Parameters();
         FileBasedConfigurationBuilder<XMLConfiguration> builder =
                 new FileBasedConfigurationBuilder<XMLConfiguration>(XMLConfiguration.class)
@@ -29,7 +29,10 @@ public enum Config {
             logger.debug(toString());
         } catch (ConfigurationException e) {
             e.printStackTrace();
+            return false;
         }
+
+        return true;
     }
 
     public String getServerIP() {
@@ -45,6 +48,6 @@ public enum Config {
     }
 
     public String toString() {
-        return ("Timeout(" + timeout + "), Server / IP(" + serverIP + "), Port(" + serverPort + ")");
+        return ("Server / IP(" + serverIP + "), Port(" + serverPort + "), Timeout(" + timeout + ")");
     }
 }

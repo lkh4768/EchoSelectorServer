@@ -10,15 +10,22 @@ public class Main {
     private static final Logger logger = LogManager.getLogger(Main.class);
 
     public static void main(String args[]) {
-        logger.info("Start");
-        Config.INSTANCE.getConfig();
-
-        try {
-            Server server = new Server();
-            server.run();
-        } catch (IOException e) {
-            logger.error("Server Construction Error(" + e.getMessage() + ")");
+        if (!Config.INSTANCE.getConfig()) {
+            logger.error("Get Config failed");
             return;
         }
+
+        Server server = null;
+        try {
+            server = new Server();
+        } catch (IOException e) {
+            logger.error("Server Create Error(" + e.getMessage() + ")");
+            return;
+        }
+
+        if (server != null)
+            server.run();
+        else
+            logger.error("Server" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + " is null");
     }
 }
