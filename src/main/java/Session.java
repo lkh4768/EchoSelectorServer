@@ -46,12 +46,16 @@ public class Session {
                 throw new IOException();
 
         } catch (IOException e) {
-            logger.error("Session(" + host + ":" + port + ") Read Error(" + e.getMessage() + ")");
+            logger.error("Session(" + host + ":" + port + "), HashCode(" + this.hashCode() + ") Read Error(" +
+                    e.getMessage() + ")");
             server.closeSession(this);
             return nread;
         }
 
-        logger.info("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ") <- Session(" + host + ":" + port + "), Req(" + Util.bufferByteToString(buf, nread) + ":" + nread + ")");
+        logger.info(
+                "Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ") <- Session(" +
+                        host + ":" + port + "), HashCode(" + this.hashCode() + "), Req(" +
+                        Util.bufferByteToString(buf, nread) + ":" + nread + ")");
         buf.flip();
         return nread;
     }
@@ -62,18 +66,24 @@ public class Session {
         try {
             nwrite = socketChannel.write(buf);
         } catch (IOException e) {
-            logger.error("Session(" + host + ":" + port + ") Write Error(" + e.getMessage() + ")");
+            logger.error("Session(" + host + ":" + port + "), HashCode(" + this.hashCode() + "), Write Error(" +
+                    e.getMessage() + ")");
             server.closeSession(this);
             return;
         }
 
         if (nwrite != length) {
-            logger.error("Session(" + host + ":" + port + ") Write Error(length diff(org(" + length + "):act(" + nwrite + ")))");
+            logger.error(
+                    "Session(" + host + ":" + port + "), HashCode(" + this.hashCode() +
+                            ") Write Error(length diff(org(" + length + "):act(" + nwrite + ")))");
             server.closeSession(this);
             return;
         }
 
-        logger.info("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ") -> Session(" + host + ":" + port + "), Res(" + Util.bufferByteToString(buf, length) + ":" + length + ")");
+        logger.info(
+                "Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ") -> Session(" +
+                        host + ":" + port + "), HashCode(" + this.hashCode() + "), Res(" +
+                        Util.bufferByteToString(buf, length) + ":" + length + ")");
     }
 
     public void close() {
@@ -81,7 +91,8 @@ public class Session {
             if (socketChannel != null && socketChannel.isOpen())
                 socketChannel.close();
         } catch (IOException e) {
-            logger.error("Session(" + host + ":" + port + "), Close Error(" + e.getMessage() + ")");
+            logger.error("Session(" + host + ":" + port + "), HashCode(" + this.hashCode() + "), Close Error(" +
+                    e.getMessage() + ")");
         }
     }
 }

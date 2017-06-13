@@ -36,25 +36,26 @@ public class Server {
         try {
             serverSocketChannel.bind(addr);
         } catch (IOException e) {
-            logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ")(" +
-                    serverSocketChannel.socket().hashCode() + "), Bind Error(" + e.getMessage() + ")");
+            logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + "), " +
+                    "HashCode(" + serverSocketChannel.socket().hashCode() + "), Bind Error(" + e.getMessage() + ")");
             return false;
         }
 
         try {
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
         } catch (ClosedChannelException e) {
-            logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ")(" +
-                    serverSocketChannel.socket().hashCode() + "), Register Error(" + e.getMessage() + ")");
+            logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + "), " +
+                    "HashCode(" + serverSocketChannel.socket().hashCode() + "), Register Error(" + e.getMessage() +
+                    ")");
             return false;
         }
 
         int failedCnt = 0;
         while (true) {
             if (failedCnt == 3) {
-                logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ")(" +
-                        serverSocketChannel.socket().hashCode() + "), run failed count exceed limit(" +
-                        FAILED_COUNT_LIMIT + ")");
+                logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + "), " +
+                        "HashCode(" + serverSocketChannel.socket().hashCode() +
+                        "), run failed count exceed limit(" + FAILED_COUNT_LIMIT + ")");
                 break;
             }
 
@@ -62,15 +63,16 @@ public class Server {
             try {
                 readyChannels = selector.select();
             } catch (IOException e) {
-                logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ")(" +
-                        serverSocketChannel.socket().hashCode() + "), Selector select Error(" + e.getMessage() + ")");
+                logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + "), " +
+                        "HashCode(" + serverSocketChannel.socket().hashCode() + "), Selector select Error(" +
+                        e.getMessage() + ")");
                 try {
                     Thread.sleep(1000000 * 10);
                 } catch (InterruptedException e1) {
                     logger.error(
-                            "Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + ")(" +
-                                    serverSocketChannel.socket().hashCode() + "), Selector select Error(" +
-                                    e.getMessage() + ")");
+                            "Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + "), " +
+                                    "HashCode(" + serverSocketChannel.socket().hashCode() +
+                                    "), Selector select Error(" + e.getMessage() + ")");
                 }
                 failedCnt++;
             }
@@ -111,7 +113,9 @@ public class Server {
             sessions.add(session);
             SelectionKey selectionKey = socketChannel.register(selector, SelectionKey.OP_READ);
             selectionKey.attach(session);
-            logger.info("Session(" + session.getHost() + ":" + session.getPort() + ") Accepted");
+            logger.info("Session(" + session.getHost() + ":" + session.getPort() + "), HashCode(" + session.hashCode() +
+                    ") " +
+                    "Accepted");
         } catch (IOException e) {
             logger.error(e.getMessage());
         }
@@ -129,7 +133,8 @@ public class Server {
                 serverSocketChannel.close();
             } catch (IOException e) {
                 logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() +
-                        "), Channel Close Error(" + e.getMessage() + ")");
+                        "), HashCode(" + serverSocketChannel.hashCode() + "), Channel Close Error(" + e.getMessage() +
+                        ")");
             }
         }
 
@@ -138,7 +143,8 @@ public class Server {
                 selector.close();
             } catch (IOException e) {
                 logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() +
-                        "), Selector Close Error(" + e.getMessage() + ")");
+                        "), Selector HashCode(" + selector.hashCode() + "), Selector Close Error(" + e.getMessage() +
+                        ")");
             }
         }
 
@@ -146,6 +152,8 @@ public class Server {
     }
 
     public void closeSession(Session session) {
+        logger.info("Session(" + session.getHost() + ":" + session.getPort() + "), HashCode(" + session.hashCode() +
+                "), Close");
         sessions.remove(session);
         session.close();
     }
