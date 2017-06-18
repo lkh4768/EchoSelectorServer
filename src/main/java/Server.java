@@ -17,14 +17,12 @@ public class Server {
     private static final int FAILED_COUNT_LIMIT = 3;
 
     private ServerSocketChannel serverSocketChannel = null;
-    private InetSocketAddress addr = null;
     private Selector selector;
     private Set<Session> sessions = new HashSet<Session>();
 
-    Server() throws IOException {
+    public Server() throws IOException {
         selector = Selector.open();
         initServerSocketChannel();
-        addr = new InetSocketAddress(Config.INSTANCE.getServerPort());
     }
 
     private void initServerSocketChannel() throws IOException {
@@ -34,7 +32,7 @@ public class Server {
 
     public boolean run() {
         try {
-            serverSocketChannel.bind(addr);
+            serverSocketChannel.bind(new InetSocketAddress(Config.INSTANCE.getServerPort()));
         } catch (IOException e) {
             logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + "), " +
                     "HashCode(" + serverSocketChannel.socket().hashCode() + "), Bind Error(" + e.getMessage() + ")");
@@ -52,7 +50,7 @@ public class Server {
 
         int failedCnt = 0;
         while (true) {
-            if (failedCnt == 3) {
+            if (failedCnt >= FAILED_COUNT_LIMIT) {
                 logger.error("Server(" + Config.INSTANCE.getServerIP() + ":" + Config.INSTANCE.getServerPort() + "), " +
                         "HashCode(" + serverSocketChannel.socket().hashCode() +
                         "), run failed count exceed limit(" + FAILED_COUNT_LIMIT + ")");
